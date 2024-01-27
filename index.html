@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>3D Model Practice</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="1000" height="1000"></canvas>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.141.0/build/three.module.js",
+          "FBXLoader": "https://unpkg.com/three@0.141.0/examples/jsm/loaders/FBXLoader.js",
+          "OrbitControls": "https://unpkg.com/three@0.139.2/examples/jsm/controls/OrbitControls.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { FBXLoader } from "FBXLoader";
+      import { OrbitControls } from "OrbitControls";
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("white");
+
+      const camera = new THREE.PerspectiveCamera(90, 1000 / 1000, 1, 2000);
+      camera.position.set(0, 0, 300);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas: document.querySelector("#canvas"),
+      });
+
+      const light = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(light);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+
+      new OrbitControls(camera, renderer.domElement);
+
+      const loader = new FBXLoader();
+      loader.load("model/drunk-walk.fbx", function (model) {
+        console.log(model);
+        model.scale.set(1, 1, 1)
+
+        const clock = new THREE.Clock();
+        const mixer = new THREE.AnimationMixer(model);
+        const action = mixer.clipAction(model.animations[0]);
+
+        action.play()
+
+        model.traverse((child)=>{
+            if(child.isMesh){
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        scene.add(model);
+
+        function animate() {
+          const delta = clock.getDelta();
+          if (mixer) mixer.update(delta);
+          renderer.render(scene, camera);
+          requestAnimationFrame(animate);
+        }
+        animate();
+      });
+
+      function exploreObject3D(object) {
+        object.traverse(function (child) {
+        if (child.isBone) {
+            console.log('Bone found:', child);
+        }
+        if (child.isMesh) {
+            console.log('Mesh found:', child);
+        }
+      });
+    }
+    </script>
+  </body>
+</html>
